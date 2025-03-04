@@ -8,6 +8,12 @@ const client = new Client({
 
 syncCommands()
 
+client.on("messageCreate", (msg) => {
+  if (msg.content === "!ping") {
+    msg.reply("Pong!")
+  }
+})
+
 client.on("ready", () => {
   console.log(`Logged in as ${client.user?.tag}`)
 })
