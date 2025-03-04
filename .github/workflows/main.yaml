@@ -45,7 +45,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       - name: Deploy to Elastic Beanstalk
         run: |
-          aws s3 cp deploy.zip s3://elasticbeanstalk-eu-central-1-${{ secrets.AWS_ACCOUNT_ID }}/artifact/nodejs-app/
+          aws s3 cp deploy-files/deploy.zip s3://elasticbeanstalk-eu-central-1-${{ secrets.AWS_ACCOUNT_ID }}/artifact/nodejs-app/
           aws elasticbeanstalk create-application-version --application-name $ELASTIC_BEANSTALK_NAME --version-label ${{ github.run_id }} --source-bundle S3Bucket="elasticbeanstalk-eu-central-1-${{ secrets.AWS_ACCOUNT_ID }}",S3Key="artifact/nodejs-app/${{ github.run_id }}.zip"
           aws elasticbeanstalk update-environment --application-name $ELASTIC_BEANSTALK_NAME --environment-name $ELASTIC_BEANSTALK_ENV_NAME --version-label ${{ github.run_id }}
           aws elasticbeanstalk wait environment-updated --application-name $ELASTIC_BEANSTALK_NAME --environment-name $ELASTIC_BEANSTALK_ENV_NAME
