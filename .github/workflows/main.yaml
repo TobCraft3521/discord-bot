@@ -1,8 +1,10 @@
-name: Node.js App Deployment
+name: Node.js
 
 on:
   push:
-    branches: ["master"]
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
 
 env:
   ELASTIC_BEANSTALK_NAME: discord-bot
@@ -13,39 +15,39 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: "16"
-      - name: Install Dependencies
-        run: npm install
-      - name: Build TypeScript
-        run: npm run build
-      - name: Package Application
-        run: |
-          zip -r deploy.zip .
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: deploy-files
-          path: deploy.zip
+    - uses: actions/checkout@v4
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '16'
+    - name: Install Dependencies
+      run: npm install
+    - name: Build
+      run: npm run build
+    - name: Pack
+      run: |
+        zip -r "${{ github.run_id }}.zip" .
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: deploy-files
+        path: ${{ github.run_id }}.zip
 
   deploy:
     runs-on: ubuntu-latest
     needs: build
 
     steps:
-      - uses: actions/download-artifact@v4
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-region: eu-central-1
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      - name: Deploy to Elastic Beanstalk
-        run: |
-          aws s3 cp deploy-files/deploy.zip s3://elasticbeanstalk-eu-central-1-${{ secrets.AWS_ACCOUNT_ID }}/artifact/nodejs-app/
-          aws elasticbeanstalk create-application-version --application-name $ELASTIC_BEANSTALK_NAME --version-label ${{ github.run_id }} --source-bundle S3Bucket="elasticbeanstalk-eu-central-1-${{ secrets.AWS_ACCOUNT_ID }}",S3Key="artifact/nodejs-app/${{ github.run_id }}.zip"
-          aws elasticbeanstalk update-environment --application-name $ELASTIC_BEANSTALK_NAME --environment-name $ELASTIC_BEANSTALK_ENV_NAME --version-label ${{ github.run_id }}
-          aws elasticbeanstalk wait environment-updated --application-name $ELASTIC_BEANSTALK_NAME --environment-name $ELASTIC_BEANSTALK_ENV_NAME
+    - uses: actions/download-artifact@v4
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-region: eu-central-1  # Ensure correct region
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    - name: Deploy
+      run: |
+        aws s3 cp "deploy-files/${{ github.run_id }}.zip" s3://elasticbeanstalk-eu-central-1-${{ secrets.AWS_ACCOUNT_ID }}/artifact/nodejs-app/
+        aws elasticbeanstalk create-application-version --application-name $ELASTIC_BEANSTALK_NAME --version-label ${{ github.run_id }} --source-bundle S3Bucket="elasticbeanstalk-eu-central-1-${{ secrets.AWS_ACCOUNT_ID }}",S3Key="artifact/nodejs-app/${{ github.run_id }}.zip"
+        aws elasticbeanstalk update-environment --application-name $ELASTIC_BEANSTALK_NAME --environment-name $ELASTIC_BEANSTALK_ENV_NAME --version-label ${{ github.run_id }}
+        aws elasticbeanstalk wait environment-updated --application-name $ELASTIC_BEANSTALK_NAME --environment-name $ELASTIC_BEANSTALK_ENV_NAME
